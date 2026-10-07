@@ -11,6 +11,7 @@ import (
 	"bynd-cms-backend/internal/community"
 	"bynd-cms-backend/internal/config"
 	"bynd-cms-backend/internal/httpx"
+	"bynd-cms-backend/internal/wellness"
 )
 
 func New(cfg config.Config) *gin.Engine {
@@ -20,6 +21,7 @@ func New(cfg config.Config) *gin.Engine {
 	authService := auth.NewService(cfg.JWTSecret)
 	authHandler := auth.NewHandler(authService, cfg.AdminUsername, cfg.AdminPassword, cfg.AdminPasswordHash)
 	communityHandler := community.NewHandler(community.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
+	wellnessHandler := wellness.NewHandler(wellness.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 
 	engine.GET("/healthz", func(c *gin.Context) { httpx.Success(c, gin.H{"status": "ok"}) })
 	api := engine.Group("/api")
@@ -37,6 +39,12 @@ func New(cfg config.Config) *gin.Engine {
 	secured.PUT("/community/challenges/:challengeId/days/:dayNumber", communityHandler.SaveChallengeDay)
 	secured.POST("/community/challenges/:challengeId/publish", communityHandler.PublishChallenge)
 	secured.POST("/community/challenges/:challengeId/archive", communityHandler.ArchiveChallenge)
+	secured.GET("/wellness/sleep", wellnessHandler.ListSleep)
+	secured.GET("/wellness/sleep/:id", wellnessHandler.GetSleep)
+	secured.GET("/wellness/journals", wellnessHandler.ListJournals)
+	secured.GET("/wellness/journals/:id", wellnessHandler.GetJournal)
+	secured.GET("/wellness/heart-rate", wellnessHandler.ListHeartRate)
+	secured.GET("/wellness/heart-rate/:id", wellnessHandler.GetHeartRate)
 
 	return engine
 }

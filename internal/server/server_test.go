@@ -53,4 +53,12 @@ func TestLoginAndCommunityProxy(t *testing.T) {
 	if groups.Code != http.StatusOK {
 		t.Fatalf("groups status = %d: %s", groups.Code, groups.Body.String())
 	}
+
+	sleep := httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/wellness/sleep?page=1&pageSize=20", nil)
+	request.Header.Set("Authorization", response.Data.Token)
+	engine.ServeHTTP(sleep, request)
+	if sleep.Code != http.StatusOK {
+		t.Fatalf("sleep status = %d: %s", sleep.Code, sleep.Body.String())
+	}
 }
