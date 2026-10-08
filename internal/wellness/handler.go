@@ -27,6 +27,15 @@ func (h *Handler) ListJournals(c *gin.Context) {
 func (h *Handler) GetJournal(c *gin.Context) {
 	h.forward(c, "/api/v1/internal/cms/journals/"+url.PathEscape(c.Param("id")), nil)
 }
+func (h *Handler) ListDiaries(c *gin.Context) {
+	h.forward(c, "/api/v1/internal/cms/diaries", c.Request.URL.Query())
+}
+func (h *Handler) GetDiary(c *gin.Context) {
+	h.forward(c, "/api/v1/internal/cms/diaries/"+url.PathEscape(c.Param("id")), nil)
+}
+func (h *Handler) DiaryDashboard(c *gin.Context) {
+	h.forward(c, "/api/v1/internal/cms/diaries/dashboard", c.Request.URL.Query())
+}
 func (h *Handler) ListHeartRate(c *gin.Context) {
 	h.forward(c, "/api/v1/internal/cms/heart-rate", c.Request.URL.Query())
 }
