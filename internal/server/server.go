@@ -10,6 +10,7 @@ import (
 	"bynd-cms-backend/internal/auth"
 	"bynd-cms-backend/internal/community"
 	"bynd-cms-backend/internal/config"
+	"bynd-cms-backend/internal/content"
 	"bynd-cms-backend/internal/httpx"
 	"bynd-cms-backend/internal/wellness"
 )
@@ -22,6 +23,7 @@ func New(cfg config.Config) *gin.Engine {
 	authHandler := auth.NewHandler(authService, cfg.AdminUsername, cfg.AdminPassword, cfg.AdminPasswordHash)
 	communityHandler := community.NewHandler(community.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 	wellnessHandler := wellness.NewHandler(wellness.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
+	contentHandler := content.NewHandler(content.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 
 	engine.GET("/healthz", func(c *gin.Context) { httpx.Success(c, gin.H{"status": "ok"}) })
 	api := engine.Group("/api")
@@ -45,6 +47,21 @@ func New(cfg config.Config) *gin.Engine {
 	secured.GET("/wellness/journals/:id", wellnessHandler.GetJournal)
 	secured.GET("/wellness/heart-rate", wellnessHandler.ListHeartRate)
 	secured.GET("/wellness/heart-rate/:id", wellnessHandler.GetHeartRate)
+	secured.GET("/content/readings/categories", contentHandler.ListCategories)
+	secured.POST("/content/readings/categories", contentHandler.CreateCategory)
+	secured.PUT("/content/readings/categories/:categoryId", contentHandler.UpdateCategory)
+	secured.DELETE("/content/readings/categories/:categoryId", contentHandler.DeleteCategory)
+	secured.GET("/content/readings/publications", contentHandler.ListPublications)
+	secured.POST("/content/readings/publications", contentHandler.CreatePublication)
+	secured.GET("/content/readings/publications/:publicationId", contentHandler.GetPublication)
+	secured.PUT("/content/readings/publications/:publicationId", contentHandler.UpdatePublication)
+	secured.DELETE("/content/readings/publications/:publicationId", contentHandler.ArchivePublication)
+	secured.GET("/content/readings/assets", contentHandler.ListAssets)
+	secured.POST("/content/readings/assets", contentHandler.UploadAsset)
+	secured.DELETE("/content/readings/assets/:assetId", contentHandler.DeleteAsset)
+	secured.GET("/content/guidance/body-foundations", contentHandler.GetGuide)
+	secured.PUT("/content/guidance/body-foundations", contentHandler.SaveGuide)
+	secured.PUT("/content/guidance/body-foundations/days/:day", contentHandler.SaveGuideDay)
 
 	return engine
 }
@@ -82,8 +99,8 @@ func securityHeaders() gin.HandlerFunc {
 func HTTPServer(cfg config.Config, handler http.Handler) *http.Server {
 	return &http.Server{
 		Addr: cfg.HTTPAddr, Handler: handler,
-		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second,
-		WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 2 * time.Minute,
+		WriteTimeout: 2 * time.Minute, IdleTimeout: 60 * time.Second,
 	}
 }
 
