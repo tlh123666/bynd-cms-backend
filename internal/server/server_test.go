@@ -61,4 +61,12 @@ func TestLoginAndCommunityProxy(t *testing.T) {
 	if sleep.Code != http.StatusOK {
 		t.Fatalf("sleep status = %d: %s", sleep.Code, sleep.Body.String())
 	}
+
+	dashboard := httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/wellness/diaries/dashboard?startDate=2026-09-01&endDate=2026-09-30", nil)
+	request.Header.Set("Authorization", response.Data.Token)
+	engine.ServeHTTP(dashboard, request)
+	if dashboard.Code != http.StatusOK {
+		t.Fatalf("diary dashboard status = %d: %s", dashboard.Code, dashboard.Body.String())
+	}
 }
