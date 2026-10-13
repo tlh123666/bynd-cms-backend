@@ -69,7 +69,7 @@ func (h *Handler) forward(c *gin.Context, method, path string, query url.Values,
 	if err != nil {
 		var upstream *UpstreamError
 		if errors.As(err, &upstream) {
-			httpx.Error(c, upstream.Status, upstream.Message)
+			httpx.Error(c, httpx.UpstreamStatus(upstream.Status), upstream.Message)
 			return
 		}
 		httpx.Error(c, http.StatusInternalServerError, "community request failed")
