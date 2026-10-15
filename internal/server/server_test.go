@@ -77,4 +77,13 @@ func TestLoginAndCommunityProxy(t *testing.T) {
 	if devices.Code != http.StatusOK {
 		t.Fatalf("devices status = %d: %s", devices.Code, devices.Body.String())
 	}
+
+	users := httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/users?page=1&pageSize=20", nil)
+	request.Header.Set("Authorization", response.Data.Token)
+	request.Header.Set("Accept-Language", "pt-BR")
+	engine.ServeHTTP(users, request)
+	if users.Code != http.StatusOK {
+		t.Fatalf("users status = %d: %s", users.Code, users.Body.String())
+	}
 }

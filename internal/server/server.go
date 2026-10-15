@@ -13,6 +13,7 @@ import (
 	"bynd-cms-backend/internal/content"
 	"bynd-cms-backend/internal/device"
 	"bynd-cms-backend/internal/httpx"
+	"bynd-cms-backend/internal/users"
 	"bynd-cms-backend/internal/wellness"
 )
 
@@ -26,6 +27,7 @@ func New(cfg config.Config) *gin.Engine {
 	wellnessHandler := wellness.NewHandler(wellness.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 	contentHandler := content.NewHandler(content.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 	deviceHandler := device.NewHandler(device.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
+	userHandler := users.NewHandler(users.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 
 	engine.GET("/healthz", func(c *gin.Context) { httpx.Success(c, gin.H{"status": "ok"}) })
 	api := engine.Group("/api")
@@ -34,6 +36,11 @@ func New(cfg config.Config) *gin.Engine {
 	secured := api.Group("")
 	secured.Use(auth.Required(authService))
 	secured.GET("/user/info", authHandler.UserInfo)
+	secured.GET("/users", userHandler.List)
+	secured.POST("/users", userHandler.Create)
+	secured.GET("/users/:userId", userHandler.Get)
+	secured.PUT("/users/:userId", userHandler.Update)
+	secured.DELETE("/users/:userId", userHandler.Delete)
 	secured.GET("/community/groups", communityHandler.ListGroups)
 	secured.GET("/community/groups/:groupId", communityHandler.GetGroup)
 	secured.GET("/community/challenges", communityHandler.ListChallenges)
@@ -83,7 +90,7 @@ func cors(origins []string) gin.HandlerFunc {
 		if _, ok := allowed[origin]; ok {
 			c.Header("Access-Control-Allow-Origin", origin)
 			c.Header("Vary", "Origin")
-			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language")
 			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		}
 		if c.Request.Method == http.MethodOptions {
