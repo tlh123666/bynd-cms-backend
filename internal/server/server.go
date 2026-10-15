@@ -11,6 +11,7 @@ import (
 	"bynd-cms-backend/internal/community"
 	"bynd-cms-backend/internal/config"
 	"bynd-cms-backend/internal/content"
+	"bynd-cms-backend/internal/device"
 	"bynd-cms-backend/internal/httpx"
 	"bynd-cms-backend/internal/users"
 	"bynd-cms-backend/internal/wellness"
@@ -25,6 +26,7 @@ func New(cfg config.Config) *gin.Engine {
 	communityHandler := community.NewHandler(community.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 	wellnessHandler := wellness.NewHandler(wellness.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 	contentHandler := content.NewHandler(content.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
+	deviceHandler := device.NewHandler(device.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 	userHandler := users.NewHandler(users.NewClient(cfg.BYNDAPIBaseURL, cfg.InternalToken, cfg.RequestTimeout))
 
 	engine.GET("/healthz", func(c *gin.Context) { httpx.Success(c, gin.H{"status": "ok"}) })
@@ -57,6 +59,8 @@ func New(cfg config.Config) *gin.Engine {
 	secured.GET("/wellness/diaries/:id", wellnessHandler.GetDiary)
 	secured.GET("/wellness/heart-rate", wellnessHandler.ListHeartRate)
 	secured.GET("/wellness/heart-rate/:id", wellnessHandler.GetHeartRate)
+	secured.GET("/devices", deviceHandler.List)
+	secured.GET("/devices/:deviceId", deviceHandler.Detail)
 	secured.GET("/content/readings/categories", contentHandler.ListCategories)
 	secured.POST("/content/readings/categories", contentHandler.CreateCategory)
 	secured.PUT("/content/readings/categories/:categoryId", contentHandler.UpdateCategory)
