@@ -69,4 +69,12 @@ func TestLoginAndCommunityProxy(t *testing.T) {
 	if dashboard.Code != http.StatusOK {
 		t.Fatalf("diary dashboard status = %d: %s", dashboard.Code, dashboard.Body.String())
 	}
+
+	devices := httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodGet, "/api/devices?page=1&pageSize=20", nil)
+	request.Header.Set("Authorization", response.Data.Token)
+	engine.ServeHTTP(devices, request)
+	if devices.Code != http.StatusOK {
+		t.Fatalf("devices status = %d: %s", devices.Code, devices.Body.String())
+	}
 }
