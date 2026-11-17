@@ -44,15 +44,26 @@ func (h *Handler) GetHeartRate(c *gin.Context) {
 }
 
 func (h *Handler) forward(c *gin.Context, path string, query url.Values) {
-	data, err := h.client.Get(c.Request.Context(), path, query, auth.ClaimsFromContext(c).Subject)
+	data, err := h.client.Get(c.Request.Context(), path, query, auth.ClaimsFromContext(c).Subject, c.GetHeader("Accept-Language"))
 	if err != nil {
 		var upstream *UpstreamError
 		if errors.As(err, &upstream) {
-			httpx.Error(c, httpx.UpstreamStatus(upstream.Status), upstream.Message)
+			httpx.Error(c, httpx.UpstreamStatus(upstream.Status), localizedError(c.GetHeader("Accept-Language"), httpx.UpstreamStatus(upstream.Status)))
 			return
 		}
-		httpx.Error(c, http.StatusInternalServerError, "wellness request failed")
+		httpx.Error(c, http.StatusInternalServerError, localizedError(c.GetHeader("Accept-Language"), http.StatusInternalServerError))
 		return
 	}
 	httpx.Success(c, data)
+}
+
+func (h *Handler) ListVitality(c *gin.Context) {
+	h.forward(c, "/api/v1/internal/cms/vitality", c.Request.URL.Query())
+}
+func (h *Handler) GetVitality(c *gin.Context) {
+	h.forward(c, "/api/v1/internal/cms/vitality/"+url.PathEscape(c.Param("userId")), nil)
+}
+
+func (h *Handler) ListHeartMeasurements(c *gin.Context) {
+	h.forward(c, "/api/v1/internal/cms/heart-measurements", c.Request.URL.Query())
 }

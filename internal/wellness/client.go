@@ -35,7 +35,7 @@ func NewClient(baseURL, token string, timeout time.Duration) *Client {
 	return &Client{baseURL: strings.TrimRight(baseURL, "/"), token: token, http: &http.Client{Timeout: timeout}}
 }
 
-func (c *Client) Get(ctx context.Context, path string, query url.Values, reviewer string) (json.RawMessage, error) {
+func (c *Client) Get(ctx context.Context, path string, query url.Values, reviewer string, languages ...string) (json.RawMessage, error) {
 	endpoint := c.baseURL + path
 	if encoded := query.Encode(); encoded != "" {
 		endpoint += "?" + encoded
@@ -45,6 +45,9 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, reviewe
 		return nil, fmt.Errorf("create BYND request: %w", err)
 	}
 	request.Header.Set("Accept", "application/json")
+	if len(languages) > 0 {
+		request.Header.Set("Accept-Language", languages[0])
+	}
 	request.Header.Set("X-Internal-Token", c.token)
 	request.Header.Set("X-Reviewer-ID", reviewer)
 	response, err := c.http.Do(request)
@@ -52,8 +55,8 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, reviewe
 		return nil, &UpstreamError{Status: http.StatusBadGateway, Message: "BYND API is unavailable"}
 	}
 	defer response.Body.Close()
-	payload, err := io.ReadAll(io.LimitReader(response.Body, 8<<20))
-	if err != nil {
+	payload, err := io.ReadAll(io.LimitReader(response.Body, (8<<20)+1))
+	if err != nil || len(payload) > 8<<20 {
 		return nil, &UpstreamError{Status: http.StatusBadGateway, Message: "invalid BYND API response"}
 	}
 	var envelope upstreamResponse
@@ -66,6 +69,9 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, reviewe
 			message = http.StatusText(response.StatusCode)
 		}
 		return nil, &UpstreamError{Status: response.StatusCode, Message: message}
+	}
+	if envelope.Code != 200 && envelope.Code != 200000 {
+		return nil, &UpstreamError{Status: http.StatusBadGateway, Message: "BYND API returned an unsuccessful envelope"}
 	}
 	if len(envelope.Data) == 0 || string(envelope.Data) == "null" {
 		return json.RawMessage("null"), nil
