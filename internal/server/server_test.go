@@ -46,6 +46,22 @@ func TestLoginAndCommunityProxy(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	for _, path := range []string{"/api/wellness/vitality?considerTraining=false&algorithmVersion=1", "/api/wellness/vitality/user-id", "/api/wellness/heart-measurements?waveformKind=ppg"} {
+		denied := httptest.NewRecorder()
+		engine.ServeHTTP(denied, httptest.NewRequest(http.MethodGet, path, nil))
+		if denied.Code != http.StatusUnauthorized {
+			t.Fatalf("unprotected wellness endpoint %s: %d", path, denied.Code)
+		}
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("Authorization", response.Data.Token)
+		req.Header.Set("Accept-Language", "pt-BR")
+		success := httptest.NewRecorder()
+		engine.ServeHTTP(success, req)
+		if success.Code != http.StatusOK {
+			t.Fatalf("wellness endpoint %s: %d: %s", path, success.Code, success.Body.String())
+		}
+	}
+
 	groups := httptest.NewRecorder()
 	request = httptest.NewRequest(http.MethodGet, "/api/community/groups?status=active", nil)
 	request.Header.Set("Authorization", response.Data.Token)
